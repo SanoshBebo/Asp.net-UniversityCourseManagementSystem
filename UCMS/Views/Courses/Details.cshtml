@@ -1,0 +1,52 @@
+﻿@model UCMS.Models.CourseWithSemesters
+
+@{
+    ViewData["Title"] = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Course</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Course.CourseName)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Course.CourseName)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Course.CourseDurationInYears)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Course.CourseDurationInYears)
+        </dd>
+    </dl>
+</div>
+
+<div>
+    <h4>Semesters</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Semester Name</th>
+            </tr>
+        </thead>
+        
+        <tbody>
+            @foreach (var semester in Model.Semesters)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => semester.SemesterName)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.Course.CourseId">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>
