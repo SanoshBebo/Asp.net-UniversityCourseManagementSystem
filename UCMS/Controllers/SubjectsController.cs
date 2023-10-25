@@ -1,42 +1,66 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Data;
+using System.Data.Common;
+using System.Data.SqlClient;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using UCMS.Data;
+using Microsoft.Extensions.Configuration;
 using UCMS.Models.Domain;
 
 namespace UCMS.Controllers
 {
     public class SubjectsController : Controller
     {
-        private readonly UCMSDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public SubjectsController(UCMSDbContext context)
+        public SubjectsController(IConfiguration configuration)
         {
-            _context = context;
+            _configuration = configuration;
+        }
+
+        private string GetConnectionString()
+        {
+            var DbConnectionString = _configuration.GetConnectionString("UCMSConnectionString");
+            return DbConnectionString;
         }
 
         // GET: Subjects
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-              return _context.Subjects != null ? 
-                          View(await _context.Subjects.ToListAsync()) :
-                          Problem("Entity set 'UCMSDbContext.Subjects'  is null.");
+            List<Subject> subjects = new List<Subject>();
+            using (SqlConnection connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                string query = "SELECT * FROM Subjects";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Subject subject = new Subject
+                            {
+                                SubjectId = Guid.Parse(reader["SubjectId"].ToString()),
+                                SubjectName = reader["SubjectName"].ToString(),
+                                TeachingHours = (int)reader["TeachingHours"]
+                            };
+                            subjects.Add(subject);
+                        }
+                    }
+                }
+            }
+            return View(subjects);
         }
 
         // GET: Subjects/Details/5
-        public async Task<IActionResult> Details(Guid? id)
+        public IActionResult Details(Guid? id)
         {
-            if (id == null || _context.Subjects == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var subject = await _context.Subjects
-                .FirstOrDefaultAsync(m => m.SubjectId == id);
+            Subject subject = GetSubjectById(id.Value);
             if (subject == null)
             {
                 return NotFound();
@@ -52,29 +76,26 @@ namespace UCMS.Controllers
         }
 
         // POST: Subjects/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("SubjectId,SubjectName,TeachingHours")] Subject subject)
+        public IActionResult Create(Subject subject)
         {
-
+            
                 subject.SubjectId = Guid.NewGuid();
-                _context.Subjects.Add(subject);
-                await _context.SaveChangesAsync();
+                InsertSubject(subject);
                 return RedirectToAction(nameof(Index));
-            return View(subject);
+            
         }
 
         // GET: Subjects/Edit/5
-        public async Task<IActionResult> Edit(Guid? id)
+        public IActionResult Edit(Guid? id)
         {
-            if (id == null || _context.Subjects == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var subject = await _context.Subjects.FindAsync(id);
+            Subject subject = GetSubjectById(id.Value);
             if (subject == null)
             {
                 return NotFound();
@@ -83,49 +104,30 @@ namespace UCMS.Controllers
         }
 
         // POST: Subjects/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [Bind("SubjectId,SubjectName,TeachingHours")] Subject subject)
+        public IActionResult Edit(Guid id, Subject subject)
         {
             if (id != subject.SubjectId)
             {
                 return NotFound();
             }
 
-           
-                try
-                {
-                    _context.Subjects.Update(subject);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!SubjectExists(subject.SubjectId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+            
+                UpdateSubject(subject);
                 return RedirectToAction(nameof(Index));
             
-            return View(subject);
         }
 
         // GET: Subjects/Delete/5
-        public async Task<IActionResult> Delete(Guid? id)
+        public IActionResult Delete(Guid? id)
         {
-            if (id == null || _context.Subjects == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var subject = await _context.Subjects
-                .FirstOrDefaultAsync(m => m.SubjectId == id);
+            Subject subject = GetSubjectById(id.Value);
             if (subject == null)
             {
                 return NotFound();
@@ -137,25 +139,84 @@ namespace UCMS.Controllers
         // POST: Subjects/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(Guid id)
+        public IActionResult DeleteConfirmed(Guid id)
         {
-            if (_context.Subjects == null)
-            {
-                return Problem("Entity set 'UCMSDbContext.Subjects'  is null.");
-            }
-            var subject = await _context.Subjects.FindAsync(id);
-            if (subject != null)
-            {
-                _context.Subjects.Remove(subject);
-            }
-            
-            await _context.SaveChangesAsync();
+            DeleteSubject(id);
             return RedirectToAction(nameof(Index));
         }
 
-        private bool SubjectExists(Guid id)
+        private Subject GetSubjectById(Guid id)
         {
-          return (_context.Subjects?.Any(e => e.SubjectId == id)).GetValueOrDefault();
+            using (SqlConnection connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                string query = "SELECT * FROM Subjects WHERE SubjectId = @SubjectId";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@SubjectId", id);
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new Subject
+                            {
+                                SubjectId = Guid.Parse(reader["SubjectId"].ToString()),
+                                SubjectName = reader["SubjectName"].ToString(),
+                                TeachingHours = (int)reader["TeachingHours"]
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        private void InsertSubject(Subject subject)
+        {
+            using (SqlConnection connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                string query = "INSERT INTO Subjects (SubjectId, SubjectName, TeachingHours) " +
+                               "VALUES (@SubjectId, @SubjectName, @TeachingHours)";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@SubjectId", subject.SubjectId);
+                    command.Parameters.AddWithValue("@SubjectName", subject.SubjectName);
+                    command.Parameters.AddWithValue("@TeachingHours", subject.TeachingHours);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private void UpdateSubject(Subject subject)
+        {
+            using (SqlConnection connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                string query = "UPDATE Subjects SET SubjectName = @SubjectName, TeachingHours = @TeachingHours " +
+                               "WHERE SubjectId = @SubjectId";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@SubjectId", subject.SubjectId);
+                    command.Parameters.AddWithValue("@SubjectName", subject.SubjectName);
+                    command.Parameters.AddWithValue("@TeachingHours", subject.TeachingHours);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private void DeleteSubject(Guid id)
+        {
+            using (SqlConnection connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                string query = "DELETE FROM Subjects WHERE SubjectId = @SubjectId";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@SubjectId", id);
+                    command.ExecuteNonQuery();
+                }
+            }
         }
     }
 }

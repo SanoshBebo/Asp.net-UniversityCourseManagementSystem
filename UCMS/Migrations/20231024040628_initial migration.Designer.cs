@@ -12,8 +12,8 @@ using UCMS.Data;
 namespace UCMS.Migrations
 {
     [DbContext(typeof(UCMSDbContext))]
-    [Migration("20231023055326_Initial Migration")]
-    partial class InitialMigration
+    [Migration("20231024040628_initial migration")]
+    partial class initialmigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -163,6 +163,9 @@ namespace UCMS.Migrations
                     b.Property<string>("SubjectName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TeachingHours")
+                        .HasColumnType("int");
 
                     b.HasKey("SubjectId");
 

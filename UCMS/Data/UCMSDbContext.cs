@@ -1,10 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using UCMS.Models.Domain;
 
 namespace UCMS.Data
 {
-    public class UCMSDbContext : DbContext
-    {
+    public class UCMSDbContext : DbContext { 
         public UCMSDbContext(DbContextOptions options) : base(options)
         {
         }

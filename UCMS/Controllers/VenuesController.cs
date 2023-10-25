@@ -1,42 +1,64 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Data;
+using System.Data.SqlClient;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using UCMS.Data;
+using Microsoft.Extensions.Configuration;
 using UCMS.Models.Domain;
 
 namespace UCMS.Controllers
 {
     public class VenuesController : Controller
     {
-        private readonly UCMSDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public VenuesController(UCMSDbContext context)
+        public VenuesController(IConfiguration configuration)
         {
-            _context = context;
+            _configuration = configuration;
+        }
+
+        private string GetConnectionString()
+        {
+            return _configuration.GetConnectionString("UCMSConnectionString");
         }
 
         // GET: Venues
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-              return _context.Venues != null ? 
-                          View(await _context.Venues.ToListAsync()) :
-                          Problem("Entity set 'UCMSDbContext.Venues'  is null.");
+            List<Venue> venues = new List<Venue>();
+            using (SqlConnection connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                string query = "SELECT * FROM Venues";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Venue venue = new Venue
+                            {
+                                VenueId = Guid.Parse(reader["VenueId"].ToString()),
+                                VenueName = reader["VenueName"].ToString(),
+                                VenueLocation = reader["VenueLocation"].ToString()
+                            };
+                            venues.Add(venue);
+                        }
+                    }
+                }
+            }
+            return View(venues);
         }
 
         // GET: Venues/Details/5
-        public async Task<IActionResult> Details(Guid? id)
+        public IActionResult Details(Guid? id)
         {
-            if (id == null || _context.Venues == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var venue = await _context.Venues
-                .FirstOrDefaultAsync(m => m.VenueId == id);
+            Venue venue = GetVenueById(id.Value);
             if (venue == null)
             {
                 return NotFound();
@@ -52,29 +74,26 @@ namespace UCMS.Controllers
         }
 
         // POST: Venues/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("VenueId,VenueName,VenueLocation")] Venue venue)
+        public IActionResult Create(Venue venue)
         {
-           
+            
                 venue.VenueId = Guid.NewGuid();
-                _context.Venues.Add(venue);
-                await _context.SaveChangesAsync();
+                InsertVenue(venue);
                 return RedirectToAction(nameof(Index));
             
         }
 
         // GET: Venues/Edit/5
-        public async Task<IActionResult> Edit(Guid? id)
+        public IActionResult Edit(Guid? id)
         {
-            if (id == null || _context.Venues == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var venue = await _context.Venues.FindAsync(id);
+            Venue venue = GetVenueById(id.Value);
             if (venue == null)
             {
                 return NotFound();
@@ -83,11 +102,9 @@ namespace UCMS.Controllers
         }
 
         // POST: Venues/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [Bind("VenueId,VenueName,VenueLocation")] Venue venue)
+        public IActionResult Edit(Guid id, Venue venue)
         {
             if (id != venue.VenueId)
             {
@@ -95,36 +112,20 @@ namespace UCMS.Controllers
             }
 
             
-                try
-                {
-                    _context.Venues.Update(venue);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!VenueExists(venue.VenueId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                UpdateVenue(venue);
                 return RedirectToAction(nameof(Index));
-           
+            
         }
 
         // GET: Venues/Delete/5
-        public async Task<IActionResult> Delete(Guid? id)
+        public IActionResult Delete(Guid? id)
         {
-            if (id == null || _context.Venues == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var venue = await _context.Venues
-                .FirstOrDefaultAsync(m => m.VenueId == id);
+            Venue venue = GetVenueById(id.Value);
             if (venue == null)
             {
                 return NotFound();
@@ -136,25 +137,91 @@ namespace UCMS.Controllers
         // POST: Venues/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(Guid id)
+        public IActionResult DeleteConfirmed(Guid id)
         {
-            if (_context.Venues == null)
+            if (DeleteVenue(id))
             {
-                return Problem("Entity set 'UCMSDbContext.Venues'  is null.");
+                return RedirectToAction(nameof(Index));
             }
-            var venue = await _context.Venues.FindAsync(id);
-            if (venue != null)
+            else
             {
-                _context.Venues.Remove(venue);
+                return Problem("Entity set 'UCMSDbContext.Venues' is null.");
             }
-            
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
         }
 
-        private bool VenueExists(Guid id)
+        private Venue GetVenueById(Guid id)
         {
-          return (_context.Venues?.Any(e => e.VenueId == id)).GetValueOrDefault();
+            using (SqlConnection connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                string query = "SELECT * FROM Venues WHERE VenueId = @VenueId";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@VenueId", id);
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new Venue
+                            {
+                                VenueId = Guid.Parse(reader["VenueId"].ToString()),
+                                VenueName = reader["VenueName"].ToString(),
+                                VenueLocation = reader["VenueLocation"].ToString()
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        private void InsertVenue(Venue venue)
+        {
+            using (SqlConnection connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                string query = "INSERT INTO Venues (VenueId, VenueName, VenueLocation) " +
+                               "VALUES (@VenueId, @VenueName, @VenueLocation)";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@VenueId", venue.VenueId);
+                    command.Parameters.AddWithValue("@VenueName", venue.VenueName);
+                    command.Parameters.AddWithValue("@VenueLocation", venue.VenueLocation);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private void UpdateVenue(Venue venue)
+        {
+            using (SqlConnection connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                string query = "UPDATE Venues SET VenueName = @VenueName, VenueLocation = @VenueLocation " +
+                               "WHERE VenueId = @VenueId";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@VenueId", venue.VenueId);
+                    command.Parameters.AddWithValue("@VenueName", venue.VenueName);
+                    command.Parameters.AddWithValue("@VenueLocation", venue.VenueLocation);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private bool DeleteVenue(Guid id)
+        {
+            using (SqlConnection connection = new SqlConnection(GetConnectionString()))
+            {
+                connection.Open();
+                string query = "DELETE FROM Venues WHERE VenueId = @VenueId";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@VenueId", id);
+                    int rowsAffected = command.ExecuteNonQuery();
+                    return rowsAffected > 0;
+                }
+            }
         }
     }
 }

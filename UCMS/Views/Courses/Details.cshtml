@@ -32,19 +32,38 @@
         <thead>
             <tr>
                 <th>Semester Name</th>
+                <th>Action</th>
             </tr>
         </thead>
-        
+
         <tbody>
             @foreach (var semester in Model.Semesters)
             {
                 <tr>
                     <td>@Html.DisplayFor(modelItem => semester.SemesterName)</td>
+                    <td>
+                        <form asp-action="DeleteSemester" asp-route-courseId="@Model.Course.CourseId" asp-route-semesterId="@semester.SemesterId">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this semester?')">Delete</button>
+                        </form>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
+
+<div>
+    <!-- Form to add a new semester -->
+    <h4>Add Semester</h4>
+    <form asp-action="AddSemester" method="post">
+        <input type="hidden" asp-for="Course.CourseId" name="courseId" />
+        <div class="form-group">
+            <input asp-for="NewSemester.SemesterName" name="semesterName" class="form-control" placeholder="Semester Name" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Semester</button>
+    </form>
+</div>
+
 
 <div>
     <a asp-action="Edit" asp-route-id="@Model.Course.CourseId">Edit</a> |

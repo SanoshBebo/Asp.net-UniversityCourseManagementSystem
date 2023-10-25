@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UCMS.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class initialmigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -29,7 +29,8 @@ namespace UCMS.Migrations
                 columns: table => new
                 {
                     SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SubjectName = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    SubjectName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TeachingHours = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
