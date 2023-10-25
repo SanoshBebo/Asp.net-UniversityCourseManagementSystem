@@ -74,9 +74,12 @@ public class UsersController : Controller
                 {
                     return RedirectToAction("StudentHome");
                 }
+                else if (user.Role == "admin")
+                {
+                    return RedirectToAction("AdminHome");
+                }
             }
-
-            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
         }
 
         return View(model);
@@ -88,6 +91,11 @@ public class UsersController : Controller
     }
 
     public IActionResult StudentHome()
+    {
+        return View();
+    }
+
+    public IActionResult AdminHome()
     {
         return View();
     }
