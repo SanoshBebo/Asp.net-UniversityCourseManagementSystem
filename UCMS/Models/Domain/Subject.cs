@@ -12,6 +12,8 @@ namespace UCMS.Models.Domain
 
         // Navigation properties
         public ICollection<SubjectAssign> SubjectAssigns { get; set; }
+        public ICollection<ProfessorAssign> ProfessorAssigns { get; set; }
+
         public ICollection<Lecture> Lectures { get; set; }
     }
 }

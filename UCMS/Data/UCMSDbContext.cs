@@ -18,6 +18,8 @@ namespace UCMS.Data
         public DbSet<Venue> Venues { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<SubjectAssign> SubjectAssigns { get; set; }
+        public DbSet<ProfessorAssign> ProfessorAssigns { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -52,14 +54,27 @@ namespace UCMS.Data
                 .WithMany(s => s.SubjectAssigns)
                 .HasForeignKey(sa => sa.SemesterId);
 
-            modelBuilder.Entity<SubjectAssign>()
-                .HasOne(sa => sa.Professor)
-                .WithMany(u => u.SubjectAssigns)
-                .HasForeignKey(sa => sa.ProfessorId);
 
             modelBuilder.Entity<SubjectAssign>()
                 .HasOne(sa => sa.Subject)
                 .WithMany(s => s.SubjectAssigns)
+                .HasForeignKey(sa => sa.SubjectId);
+
+
+            // ProfessorAssign to Semester, Professor, and Subject
+            modelBuilder.Entity<ProfessorAssign>()
+                .HasOne(sa => sa.Semester)
+                .WithMany(s => s.ProfessorAssigns)
+                .HasForeignKey(sa => sa.SemesterId);
+
+            modelBuilder.Entity<ProfessorAssign>()
+                .HasOne(sa => sa.Professor)
+                .WithMany(u => u.ProfessorAssigns)
+                .HasForeignKey(sa => sa.ProfessorId);
+
+            modelBuilder.Entity<ProfessorAssign>()
+                .HasOne(sa => sa.Subject)
+                .WithMany(s => s.ProfessorAssigns)
                 .HasForeignKey(sa => sa.SubjectId);
 
             // Lecture to Venue, Subject, Semester, and Professor
@@ -81,7 +96,7 @@ namespace UCMS.Data
             modelBuilder.Entity<Lecture>()
                 .HasOne(l => l.Professor)
                 .WithMany(p => p.Lectures)
-                .HasForeignKey(l => l.ProfessorId);
+                .HasForeignKey(l => l.UserId);
 
             // Venue to Lecture
             modelBuilder.Entity<Venue>()

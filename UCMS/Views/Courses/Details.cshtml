@@ -46,6 +46,7 @@
                         <form asp-action="DeleteSemester" asp-route-courseId="@Model.Course.CourseId" asp-route-semesterId="@semester.SemesterId">
                             <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this semester?')">Delete</button>
                         </form>
+                        <a asp-action="GetAssignedSubjects" asp-route-semesterId="@semester.SemesterId" class="btn btn-primary">Subjects</a>
                     </td>
                 </tr>
             }

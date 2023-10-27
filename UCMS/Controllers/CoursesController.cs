@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using UCMS.Models;
 using UCMS.Models.Domain;
@@ -219,6 +220,226 @@ namespace UCMS.Controllers
 
             return RedirectToAction("Details", new { id = courseId });
         }
+
+
+
+        public IActionResult GetAssignedSubjects(Guid semesterId)
+        {
+            // Define a list to store the assigned subjects
+            List<Subject> assignedSubjects = new List<Subject>();
+            var subjects = GetSubjects();
+
+            using (var connection = new SqlConnection(_configuration.GetConnectionString("UCMSConnectionString")))
+            {
+                connection.Open();
+
+                // Create a SELECT query to retrieve assigned subjects for the specified semester
+                string selectQuery = "SELECT s.SubjectId, s.SubjectName FROM SubjectAssigns sa JOIN Subjects s ON sa.SubjectId = s.SubjectId WHERE sa.SemesterId = @SemesterId";
+
+                using (var command = new SqlCommand(selectQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@SemesterId", semesterId);
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            // Create Subject objects from the retrieved data
+                            var subject = new Subject
+                            {
+                                SubjectId = reader.GetGuid(reader.GetOrdinal("SubjectId")),
+                                SubjectName = reader.GetString(reader.GetOrdinal("SubjectName"))
+                            };
+
+                            assignedSubjects.Add(subject);
+                        }
+                    }
+                }
+            }
+
+            var SubjectAssignmentModel = new SubjectAssignmentModel
+            {
+                SemesterId = semesterId,
+                AssignedSubjects = assignedSubjects,
+                AvailableSubjects = subjects,
+            };
+
+            // Pass the list of assigned subjects to the view
+            return View(SubjectAssignmentModel);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public IActionResult AssignProfessors(Guid subjectId, Guid semesterId)
+        {
+            // Get a list of professors (you can replace this with your logic)
+            var professors = GetProfessors();
+
+            // Get the list of professors assigned to this subject
+            var assignedProfessors = GetAssignedProfessorsForSubject(subjectId, semesterId);
+
+            // Create a model that includes available professors and assigned professors
+            var professorAssignmentModel = new ProfessorAssignmentModel
+            {
+                SubjectId = subjectId,
+                SemesterId = semesterId,
+                AvailableProfessors = professors,
+                AssignedProfessors = assignedProfessors,
+            };
+
+            return View(professorAssignmentModel);
+        }
+
+
+
+        [HttpPost]
+public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  List<Guid> SelectedProfessorIds)
+{
+    if (SelectedProfessorIds != null && SelectedProfessorIds.Any())
+    {
+        using (var connection = new SqlConnection(_configuration.GetConnectionString("UCMSConnectionString")))
+        {
+            connection.Open();
+
+            // Create a parameterized INSERT query to add professors to the specified subject
+            string insertQuery = "INSERT INTO ProfessorAssigns (ProfessorAssignId, SubjectId, ProfessorId, SemesterId) VALUES (@ProfessorAssignId, @SubjectId, @ProfessorId, @SemesterId)";
+
+            foreach (var professorId in SelectedProfessorIds)
+            {
+                using (var command = new SqlCommand(insertQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@ProfessorAssignId", Guid.NewGuid());
+                    command.Parameters.AddWithValue("@SubjectId", SubjectId);
+                    command.Parameters.AddWithValue("@ProfessorId", professorId);
+                    command.Parameters.AddWithValue("@SemesterId", SemesterId);
+
+
+                            try
+                            {
+                        int rowsAffected = command.ExecuteNonQuery();
+                        if (rowsAffected <= 0)
+                        {
+                            // Handle the error (e.g., log an error, display an error message)
+                            // You can choose to continue or exit the loop based on your error handling strategy.
+                        }
+                    }
+                    catch (SqlException ex)
+                    {
+                        if (ex.Number == 2627)
+                        {
+                            // Handle the error indicating duplicate professor assignment
+                            ViewBag.DuplicateProfessorAssignmentMessage = "One or more selected professors are already assigned to this subject.";
+                            // You can choose to continue or exit the loop based on your error handling strategy.
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Redirect back to the AssignProfessors page with the same subject
+    return RedirectToAction("AssignProfessors", new { SubjectId, SemesterId });
+}
+
+
+        public List<Professor> GetAssignedProfessorsForSubject(Guid SubjectId, Guid SemesterId)
+        {
+            List<Professor> assignedProfessors = new List<Professor>();
+
+            using (var connection = new SqlConnection(_configuration.GetConnectionString("UCMSConnectionString")))
+            {
+                connection.Open();
+
+                // Create a SELECT query to retrieve professors assigned to the specified subject and semester
+                string selectQuery = @"
+            SELECT p.UserId, p.ProfessorName
+            FROM ProfessorAssigns pa
+            JOIN Professors p ON pa.ProfessorId = p.UserId
+            WHERE pa.SubjectId = @SubjectId AND pa.SemesterId = @SemesterId";
+
+                using (var command = new SqlCommand(selectQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@SubjectId", SubjectId);
+                    command.Parameters.AddWithValue("@SemesterId", SemesterId);
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            // Create Professor objects from the retrieved data
+                            var professor = new Professor
+                            {
+                                UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
+                                ProfessorName = reader.GetString(reader.GetOrdinal("ProfessorName"))
+                            };
+
+                            assignedProfessors.Add(professor);
+                        }
+                    }
+                }
+            }
+
+            return assignedProfessors;
+        }
+
+
+
+        [HttpPost]
+       public IActionResult AddSubjectToSemester(Guid semesterId, List<Guid> selectedSubjectIds)
+{
+    if (selectedSubjectIds != null && selectedSubjectIds.Any())
+    {
+        using (var connection = new SqlConnection(_configuration.GetConnectionString("UCMSConnectionString")))
+        {
+            connection.Open();
+
+            // Create a parameterized INSERT query to add subjects to the specified semester
+            string insertQuery = "INSERT INTO SubjectAssigns (SubjectAssignId, SemesterId, SubjectId) VALUES (@SubjectAssignId, @SemesterId, @SubjectId)";
+
+            foreach (var subjectId in selectedSubjectIds)
+            {
+                using (var command = new SqlCommand(insertQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@SubjectAssignId", Guid.NewGuid());
+                    command.Parameters.AddWithValue("@SemesterId", semesterId);
+                    command.Parameters.AddWithValue("@SubjectId", subjectId);
+
+                    try
+                    {
+                        int rowsAffected = command.ExecuteNonQuery();
+                        if (rowsAffected <= 0)
+                        {
+                                    // Handle the error (e.g., log an error, display an error message)
+                                    // You can choose to continue or exit the loop based on your error handling strategy.
+                                }
+                            }
+                    catch (SqlException ex)
+                    {
+                        // Check if the error is due to a duplicate entry (unique constraint violation)
+                            // Set a message in ViewBag to indicate the subject is already assigned
+                            ViewBag.DuplicateSubjectMessage = "One or more selected subjects are already assigned to this semester.";
+                            // You can choose to continue or exit the loop based on your error handling strategy.
+                    }
+                }
+            }
+        }
+    }
+
+    // Redirect to the assigned subjects page
+    return RedirectToAction("GetAssignedSubjects", new { semesterId });
+}
+
+
 
         private Course GetCourseById(Guid id)
         {

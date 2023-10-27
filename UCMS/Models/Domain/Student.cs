@@ -9,13 +9,13 @@ namespace UCMS.Models.Domain
         [ForeignKey("User")]
         public Guid UserId { get; set; }
         public string StudentName { get; set; }
-        public string Batch { get; set; }
+        public string? Batch { get; set; }
 
         [ForeignKey("Course")]
-        public Guid CourseId { get; set; }
+        public Guid? CourseId { get; set; }
 
         [ForeignKey("Semester")]
-        public Guid SemesterId { get; set; }
+        public Guid? SemesterId { get; set; }
 
         // Navigation property
         public User User { get; set; }

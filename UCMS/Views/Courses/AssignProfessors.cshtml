@@ -1,0 +1,53 @@
+﻿@model UCMS.Models.ProfessorAssignmentModel
+
+@if (!string.IsNullOrEmpty(ViewBag.DuplicateProfessorMessage))
+{
+    <div class="alert alert-warning">
+        @ViewBag.DuplicateProfessorMessage
+    </div>
+}
+
+<h1>Assigned Professors for Subject</h1>
+
+@if (Model.AssignedProfessors.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Professor Name</th>
+                <!-- Add other columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var professor in Model.AssignedProfessors)
+            {
+                <tr>
+                    <td>@professor.ProfessorName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No professors assigned for this subject.</p>
+}
+
+<h2>Assign Professors to Subject</h2>
+<form asp-action="AddProfessorToSubjects" method="post">
+    <input type="hidden" asp-for="SemesterId" name="SemesterId" value="@Model.SemesterId" />
+    <input type="hidden" asp-for="SubjectId" name="SubjectId" value="@Model.SubjectId" />
+
+    <div class="form-group">
+        <label>Select Professors:</label>
+        @foreach (var professor in Model.AvailableProfessors)
+        {
+            <div class="form-check">
+                <input type="checkbox" name="SelectedProfessorIds" value="@professor.UserId" class="form-check-input" />
+                <label class="form-check-label">@professor.ProfessorName</label>
+            </div>
+        }
+    </div>
+
+    <button type="submit" class="btn btn-primary">Assign Professors</button>
+</form>

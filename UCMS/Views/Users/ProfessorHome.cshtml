@@ -1,5 +1,44 @@
-﻿
+﻿@model ProfessorHomeViewModel
 @{
+    ViewData["Title"] = "Professor Home";
     Layout = "~/Views/Shared/ProfessorLayout.cshtml";
 }
-<!-- Your view content here -->
+
+<h1>Welcome, @Model.Professor.ProfessorName!</h1>
+
+<h2>Your Assigned Subjects</h2>
+
+@if (Model.AssignedSubjects.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>Semester</th>
+                <th>Subject</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var subject in Model.AssignedSubjects)
+            {
+                <tr>
+                    <td>@subject.CourseName</td>
+                    <td>@subject.SemesterName</td>
+                    <td>@subject.SubjectName</td>
+                    <td>
+                        <a asp-action="AssignLecture" asp-route-semesterId="@subject.SemesterId"
+                           asp-route-subjectId="@subject.SubjectId"
+                           asp-route-professorId="@Model.Professor.UserId"
+                           class="btn btn-primary">
+                            Assign Lecture
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No subjects assigned to you yet.</p>
+}

@@ -10,10 +10,12 @@ namespace UCMS.Models.Domain
         public string LectureName { get; set; }
 
         [ForeignKey("Professor")]
-        public Guid ProfessorId { get; set; } // Explicitly specify the foreign key property name
+        public Guid UserId { get; set; }
+        // Explicitly specify the foreign key property name
 
-        public int Hours { get; set; }
         public DateTime DateTime { get; set; }
+
+        public string Series { get; set; }
 
         [ForeignKey("Venue")]
         public Guid VenueId { get; set; }

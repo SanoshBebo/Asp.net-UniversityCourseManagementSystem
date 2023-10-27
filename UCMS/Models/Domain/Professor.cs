@@ -9,11 +9,13 @@ namespace UCMS.Models.Domain
         [ForeignKey("User")]
         public Guid UserId { get; set; }
         public string ProfessorName { get; set; }
-        public int ExperienceInYears { get; set; }
+        public int? ExperienceInYears { get; set; }
 
         // Navigation property
         public User User { get; set; }
         public ICollection<SubjectAssign> SubjectAssigns { get; set; }
+        public ICollection<ProfessorAssign> ProfessorAssigns { get; set; }
+
         public ICollection<Lecture> Lectures { get; set; }
     }
 }

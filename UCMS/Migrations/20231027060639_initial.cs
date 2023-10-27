@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UCMS.Migrations
 {
     /// <inheritdoc />
-    public partial class initialmigration : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -90,7 +90,7 @@ namespace UCMS.Migrations
                 {
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ProfessorName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ExperienceInYears = table.Column<int>(type: "int", nullable: false)
+                    ExperienceInYears = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -109,9 +109,9 @@ namespace UCMS.Migrations
                 {
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     StudentName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Batch = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CourseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SemesterId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    Batch = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CourseId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    SemesterId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -142,20 +142,19 @@ namespace UCMS.Migrations
                 {
                     LectureId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     LectureName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ProfessorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Hours = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Series = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     VenueId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SemesterId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Lectures", x => x.LectureId);
                     table.ForeignKey(
-                        name: "FK_Lectures_Professors_ProfessorId",
-                        column: x => x.ProfessorId,
+                        name: "FK_Lectures_Professors_UserId",
+                        column: x => x.UserId,
                         principalTable: "Professors",
                         principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
@@ -172,15 +171,42 @@ namespace UCMS.Migrations
                         principalColumn: "SubjectId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Lectures_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "UserId");
-                    table.ForeignKey(
                         name: "FK_Lectures_Venues_VenueId",
                         column: x => x.VenueId,
                         principalTable: "Venues",
                         principalColumn: "VenueId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProfessorAssigns",
+                columns: table => new
+                {
+                    ProfessorAssignId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SemesterId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProfessorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProfessorAssigns", x => x.ProfessorAssignId);
+                    table.ForeignKey(
+                        name: "FK_ProfessorAssigns_Professors_ProfessorId",
+                        column: x => x.ProfessorId,
+                        principalTable: "Professors",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProfessorAssigns_Semesters_SemesterId",
+                        column: x => x.SemesterId,
+                        principalTable: "Semesters",
+                        principalColumn: "SemesterId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProfessorAssigns_Subjects_SubjectId",
+                        column: x => x.SubjectId,
+                        principalTable: "Subjects",
+                        principalColumn: "SubjectId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -190,42 +216,26 @@ namespace UCMS.Migrations
                 {
                     SubjectAssignId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SemesterId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProfessorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    StudentUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SubjectAssigns", x => x.SubjectAssignId);
-                    table.ForeignKey(
-                        name: "FK_SubjectAssigns_Professors_ProfessorId",
-                        column: x => x.ProfessorId,
-                        principalTable: "Professors",
-                        principalColumn: "UserId",
-                        onDelete: ReferentialAction.Cascade);
+                  
                     table.ForeignKey(
                         name: "FK_SubjectAssigns_Semesters_SemesterId",
                         column: x => x.SemesterId,
                         principalTable: "Semesters",
                         principalColumn: "SemesterId",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SubjectAssigns_Students_StudentUserId",
-                        column: x => x.StudentUserId,
-                        principalTable: "Students",
-                        principalColumn: "UserId");
+             
                     table.ForeignKey(
                         name: "FK_SubjectAssigns_Subjects_SubjectId",
                         column: x => x.SubjectId,
                         principalTable: "Subjects",
                         principalColumn: "SubjectId",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SubjectAssigns_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "UserId");
+                  
                 });
 
             migrationBuilder.CreateIndex(
@@ -243,15 +253,26 @@ namespace UCMS.Migrations
                 table: "Lectures",
                 column: "SubjectId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Lectures_UserId",
-                table: "Lectures",
-                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Lectures_VenueId",
                 table: "Lectures",
                 column: "VenueId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProfessorAssigns_ProfessorId",
+                table: "ProfessorAssigns",
+                column: "ProfessorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProfessorAssigns_SemesterId",
+                table: "ProfessorAssigns",
+                column: "SemesterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProfessorAssigns_SubjectId",
+                table: "ProfessorAssigns",
+                column: "SubjectId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Semesters_CourseId",
@@ -268,30 +289,19 @@ namespace UCMS.Migrations
                 table: "Students",
                 column: "SemesterId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_SubjectAssigns_ProfessorId",
-                table: "SubjectAssigns",
-                column: "ProfessorId");
+        
 
             migrationBuilder.CreateIndex(
                 name: "IX_SubjectAssigns_SemesterId",
                 table: "SubjectAssigns",
                 column: "SemesterId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_SubjectAssigns_StudentUserId",
-                table: "SubjectAssigns",
-                column: "StudentUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SubjectAssigns_SubjectId",
                 table: "SubjectAssigns",
                 column: "SubjectId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_SubjectAssigns_UserId",
-                table: "SubjectAssigns",
-                column: "UserId");
         }
 
         /// <inheritdoc />
@@ -299,6 +309,9 @@ namespace UCMS.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Lectures");
+
+            migrationBuilder.DropTable(
+                name: "ProfessorAssigns");
 
             migrationBuilder.DropTable(
                 name: "SubjectAssigns");

@@ -1,0 +1,59 @@
+﻿@model SubjectAssignmentModel
+
+
+@if (!string.IsNullOrEmpty(ViewBag.DuplicateSubjectMessage))
+{
+    <div class="alert alert-warning">
+        @ViewBag.DuplicateSubjectMessage
+    </div>
+}
+
+
+<h1>Assigned Subjects</h1>
+
+@if (Model.AssignedSubjects.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Subject Name</th>
+                <!-- Add other columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var subject in Model.AssignedSubjects)
+            {
+                <tr>
+                    <td>@subject.SubjectName</td>
+                    <td>
+                        <a asp-action="AssignProfessors" asp-route-SubjectId="@subject.SubjectId" asp-route-SemesterId="@Model.SemesterId" class="btn btn-primary">Assign Professors</a>
+                    </td>
+                </tr>
+               
+
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No subjects assigned for this semester.</p>
+}
+<h2>Add Subjects to Semester</h2>
+<form asp-action="AddSubjectToSemester" method="post">
+    <input type="hidden" asp-for="SemesterId" name="SemesterId" value="@Model.SemesterId" />
+
+    <div class="form-group">
+        <label>Select Subjects:</label>
+        @foreach (var subject in Model.AvailableSubjects)
+        {
+            <div class="form-check">
+                <input type="checkbox" name="SelectedSubjectIds" value="@subject.SubjectId" class="form-check-input" />
+                <label class="form-check-label">@subject.SubjectName</label>
+            </div>
+        }
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Subjects</button>
+</form>
+

@@ -16,6 +16,9 @@ namespace UCMS.Models.Domain
         public Course Course { get; set; }
         public ICollection<Student> Students { get; set; }
         public ICollection<SubjectAssign> SubjectAssigns { get; set; }
+
+        public ICollection<ProfessorAssign> ProfessorAssigns { get; set; }
+
         public ICollection<Lecture> Lectures { get; set; }
     }
 }
