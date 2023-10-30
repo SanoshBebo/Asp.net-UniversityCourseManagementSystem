@@ -1,4 +1,50 @@
-﻿@{
+﻿@model StudentHomeViewModel
+@{
     Layout = "~/Views/Shared/StudentLayout.cshtml";
 }
-<!-- Your view content here -->
+@if (Model.HasRegisteredCourse)
+{
+    <h2>Your Registered Course</h2>
+    <p>Course Name: @Model.Course.CourseName</p>
+    <p>Semester: @Model.Semester.SemesterName</p>
+    <h3>Subjects</h3>
+    <ul>
+        @foreach (var subject in Model.Subjects)
+        {
+            <li>@subject.SubjectName
+                <a asp-action="ViewLectures" asp-route-userId="@Model.UserId" asp-route-subjectId="@subject.SubjectId" asp-route-semesterId="@Model.Semester.SemesterId" class="btn btn-primary">View Lectures</a>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <h2>Available Courses</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Course Name</th>
+                <th>Batch</th>
+                <th>Year</th>
+                <th>Course Duration (in years)</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var course in Model.AvailableCourses)
+            {
+                <tr>
+                    <td>@course.CourseName</td>
+                    <td>@course.Batch</td>
+                    <td>@course.Year</td>
+                    <td>@course.CourseDurationInYears</td>
+                    <td>
+                        <form asp-action="RegisterCourse" asp-route-courseId="@course.CourseId" asp-route-userId="@Model.UserId">
+                            <button type="submit" class="btn btn-danger">Register</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

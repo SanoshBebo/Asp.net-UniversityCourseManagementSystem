@@ -4,11 +4,11 @@
     Layout = "~/Views/Shared/ProfessorLayout.cshtml";
 }
 
-<h1>Welcome, @Model.Professor.ProfessorName!</h1>
+<h1>Welcome, @(Model?.Professor?.ProfessorName ?? "Professor")!</h1>
 
 <h2>Your Assigned Subjects</h2>
 
-@if (Model.AssignedSubjects.Any())
+@if (Model != null && Model.AssignedSubjects.Any())
 {
     <table class="table">
         <thead>
@@ -31,6 +31,14 @@
                            asp-route-professorId="@Model.Professor.UserId"
                            class="btn btn-primary">
                             Assign Lecture
+                        </a>
+                    </td>
+                    <td>
+                        <a asp-action="ViewLecture" asp-route-semesterId="@subject.SemesterId"
+                           asp-route-subjectId="@subject.SubjectId"
+                           asp-route-professorId="@Model.Professor.UserId"
+                           class="btn btn-primary">
+                            View Lecture
                         </a>
                     </td>
                 </tr>

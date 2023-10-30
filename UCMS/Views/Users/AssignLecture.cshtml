@@ -10,12 +10,19 @@
 <form asp-action="AddLecture" method="post">
     <input type="hidden" asp-for="SubjectId" />
     <input type="hidden" asp-for="SemesterId" />
+    <input type="hidden" asp-for="ProfessorId" />
+
+
+    <div asp-validation-summary="All" class="text-danger"></div>
 
     <div class="form-group">
         <label asp-for="LectureName">Lecture Name</label>
-        <input asp-for="LectureName" class="form-control" />
+        <select asp-for="LectureName" asp-items="new SelectList(Model.LectureNames)" class="form-control">
+            <option value="">Select a Lecture Name</option>
+        </select>
         <span asp-validation-for="LectureName" class="text-danger"></span>
     </div>
+
 
     <div class="form-group">
         <label asp-for="Series">Series No</label>

@@ -1,0 +1,45 @@
+﻿@model LectureAssignmentViewModel
+
+@{
+    ViewData["Title"] = "View Lectures";
+    Layout = "~/Views/Shared/ProfessorLayout.cshtml";
+}
+
+<h1>View Lectures</h1>
+
+@if (Model.Lectures.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Lecture Name</th>
+                <th>Series</th>
+                <th>Date and Time</th>
+                <th>Venue</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var lecture in Model.Lectures)
+            {
+                <tr>
+                    <td>@lecture.LectureName</td>
+                    <td>@lecture.Series</td>
+                    <td>@lecture.DateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@lecture.Venue.VenueName</td>
+                    <td>
+                        <form asp-action="DeleteLecture" asp-route-lectureId="@lecture.LectureId" asp-route-professorId="@Model.ProfessorId">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No lectures available for this subject and semester.</p>
+}
+
+<a asp-action="ProfessorHome" asp-route-userId="@Model.ProfessorId" class="btn btn-primary">Back to Professor Home</a>

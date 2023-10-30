@@ -9,13 +9,17 @@ namespace UCMS.Models.Domain
         public Guid LectureId { get; set; }
         public string LectureName { get; set; }
 
-        [ForeignKey("Professor")]
-        public Guid UserId { get; set; }
+      
         // Explicitly specify the foreign key property name
 
-        public DateTime DateTime { get; set; }
+        public DateTime DateTime {get; set; }
 
         public string Series { get; set; }
+
+        public int? StudentsEnrolled { get; set; }
+
+        [ForeignKey("Professor")]
+        public Guid ProfessorId { get; set; }
 
         [ForeignKey("Venue")]
         public Guid VenueId { get; set; }
@@ -31,6 +35,8 @@ namespace UCMS.Models.Domain
         public Venue Venue { get; set; }
         public Subject Subject { get; set; }
         public Semester Semester { get; set; }
+
+        public ICollection<StudentLectureEnrollment> StudentEnrollments { get; set; }
     }
 
 }

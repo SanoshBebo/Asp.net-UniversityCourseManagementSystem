@@ -454,11 +454,15 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
                     {
                         if (reader.Read())
                         {
+                            int year = (int)reader["Year"];
+                            string batch = reader["Batch"].ToString();
                             return new Course
                             {
                                 CourseId = Guid.Parse(reader["CourseId"].ToString()),
                                 CourseName = reader["CourseName"].ToString(),
-                                CourseDurationInYears = (int)reader["CourseDurationInYears"]
+                                CourseDurationInYears = (int)reader["CourseDurationInYears"],
+                                Year = year,
+                                Batch = batch
                             };
                         }
                     }
@@ -553,13 +557,16 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
             using (SqlConnection connection = new SqlConnection(GetConnectionString()))
             {
                 connection.Open();
-                string query = "INSERT INTO Courses (CourseId, CourseName, CourseDurationInYears) " +
-                               "VALUES (@CourseId, @CourseName, @CourseDurationInYears)";
+                string query = "INSERT INTO Courses (CourseId, CourseName, CourseDurationInYears, Batch, Year) " +
+                               "VALUES (@CourseId, @CourseName, @CourseDurationInYears, @Batch, @Year)";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@CourseId", course.CourseId);
                     command.Parameters.AddWithValue("@CourseName", course.CourseName);
                     command.Parameters.AddWithValue("@CourseDurationInYears", course.CourseDurationInYears);
+                    command.Parameters.AddWithValue("@Batch", course.Batch);
+                    command.Parameters.AddWithValue("@Year", course.Year);
+
                     command.ExecuteNonQuery();
                 }
             }   
@@ -570,13 +577,15 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
             using (SqlConnection connection = new SqlConnection(GetConnectionString()))
             {
                 connection.Open();
-                string query = "UPDATE Courses SET CourseName = @CourseName, CourseDurationInYears = @CourseDurationInYears " +
+                string query = "UPDATE Courses SET CourseName = @CourseName, CourseDurationInYears = @CourseDurationInYears, Batch = @Batch, Year = @Year " + 
                                "WHERE CourseId = @CourseId";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@CourseId", course.CourseId);
                     command.Parameters.AddWithValue("@CourseName", course.CourseName);
                     command.Parameters.AddWithValue("@CourseDurationInYears", course.CourseDurationInYears);
+                    command.Parameters.AddWithValue("@Batch", course.Batch);
+                    command.Parameters.AddWithValue("@Year", course.Year);
                     command.ExecuteNonQuery();
                 }
             }

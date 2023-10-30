@@ -1,0 +1,65 @@
+﻿@model List<LectureViewModel>
+@{
+    ViewData["Title"] = "View Lectures";
+    Layout = "~/Views/Shared/StudentLayout.cshtml";
+
+}
+
+<h2>Lectures</h2>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Lecture Name</th>
+            <th>Date and Time</th>
+            <th>Subject</th>
+            <th>Professor</th>
+            <th>Series</th>
+
+            <th>Venue</th>
+            <th>Semester</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var lecture in Model)
+        {
+            <tr>
+                <td>@lecture.LectureName</td>
+                <td>@lecture.DateTime</td>
+                <td>@lecture.SubjectName</td>
+                <td>@lecture.ProfessorName</td>
+                <td>@lecture.Series</td>
+                <td>@lecture.VenueName</td>
+                <td>@lecture.SemesterName</td>
+                <td>
+                    @if(lecture.Slots == 25)
+                    {
+                        <span class="text-success">Slots Full</span>
+                    }
+                    else
+                    {
+                        
+                    if (!lecture.IsBooked)
+                    {
+                        <form asp-action="BookLecture" asp-route-lectureId="@lecture.LectureId" asp-route-UserId="@lecture.UserId">
+                            <button type="submit" class="btn btn-primary">Book Lecture</button>
+                        </form>
+                    }
+                    
+                    else
+                    {
+                        <span class="text-success">Booked</span>
+                    }
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

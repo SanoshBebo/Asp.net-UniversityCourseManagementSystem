@@ -14,27 +14,49 @@ namespace UCMS.Data
         public DbSet<Lecture> Lectures { get; set; }
         public DbSet<Professor> Professors { get; set; }
         public DbSet<Semester> Semesters { get; set; }
+        public DbSet<StudentRegistration> StudentRegistrations { get; set; }
         public DbSet<Subject> Subjects { get; set; }
         public DbSet<Venue> Venues { get; set; }
+        public DbSet<VenueBooking> VenueBookings { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<SubjectAssign> SubjectAssigns { get; set; }
         public DbSet<ProfessorAssign> ProfessorAssigns { get; set; }
-
+        public DbSet<StudentLectureEnrollment> StudentLectureEnrollments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Define the relationships between entities
+            modelBuilder.Entity<StudentLectureEnrollment>()
+            .HasKey(sle => new { sle.StudentId, sle.LectureId });
 
-            // Student to Course and Semester
-            modelBuilder.Entity<Student>()
-                .HasOne(s => s.Course)
-                .WithMany(c => c.Students)
-                .HasForeignKey(s => s.CourseId);
+            modelBuilder.Entity<StudentLectureEnrollment>()
+                .HasOne(sle => sle.Student)
+                .WithMany(student => student.LectureEnrollments)
+                .HasForeignKey(sle => sle.StudentId)
+                .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<Student>()
-                .HasOne(s => s.Semester)
-                .WithMany(sm => sm.Students)
-                .HasForeignKey(s => s.SemesterId);
+            modelBuilder.Entity<StudentLectureEnrollment>()
+                .HasOne(sle => sle.Lecture)
+                .WithMany(lecture => lecture.StudentEnrollments)
+                .HasForeignKey(sle => sle.LectureId)
+            .OnDelete(DeleteBehavior.NoAction);
+            // Define relationships using data annotations
+            modelBuilder.Entity<StudentRegistration>()
+        .HasOne(sr => sr.User)
+        .WithMany()
+        .HasForeignKey(sr => sr.UserId)
+        .OnDelete(DeleteBehavior.NoAction); // Specify NO ACTION
+
+            modelBuilder.Entity<StudentRegistration>()
+                .HasOne(sr => sr.Course)
+                .WithMany()
+                .HasForeignKey(sr => sr.CourseId)
+                .OnDelete(DeleteBehavior.NoAction); // Specify NO ACTION
+
+            modelBuilder.Entity<StudentRegistration>()
+                .HasOne(sr => sr.Semester)
+                .WithMany()
+                .HasForeignKey(sr => sr.SemesterId)
+                .OnDelete(DeleteBehavior.NoAction); // Specify NO ACTION
 
             // Professor to User
             modelBuilder.Entity<Professor>()
@@ -96,13 +118,34 @@ namespace UCMS.Data
             modelBuilder.Entity<Lecture>()
                 .HasOne(l => l.Professor)
                 .WithMany(p => p.Lectures)
-                .HasForeignKey(l => l.UserId);
+                .HasForeignKey(l => l.ProfessorId);
 
             // Venue to Lecture
             modelBuilder.Entity<Venue>()
                 .HasMany(v => v.Lectures)
                 .WithOne(l => l.Venue)
                 .HasForeignKey(l => l.VenueId);
+
+            modelBuilder.Entity<Venue>()
+                .HasMany(v => v.VenuesBooking)
+                .WithOne(vb => vb.Venue)
+                .HasForeignKey(vb => vb.VenueId);
+
+            modelBuilder.Entity<Professor>()
+    .HasMany(p => p.VenueBookings)
+    .WithOne(vb => vb.Professor)
+    .HasForeignKey(vb => vb.ProfessorId);
+
+            modelBuilder.Entity<VenueBooking>()
+        .HasOne(vb => vb.Professor)
+        .WithMany(p => p.VenueBookings)
+        .HasForeignKey(vb => vb.ProfessorId);
+
+            modelBuilder.Entity<VenueBooking>()
+                .HasOne(vb => vb.Venue)
+                .WithMany(v => v.VenuesBooking)
+                .HasForeignKey(vb => vb.VenueId);
+
 
             // Subject to SubjectAssign and Lecture
             modelBuilder.Entity<Subject>()
@@ -122,7 +165,7 @@ namespace UCMS.Data
                 .HasForeignKey(sm => sm.CourseId);
 
             modelBuilder.Entity<Course>()
-                .HasMany(c => c.Students)
+                .HasMany(sm => sm.StudentRegistration)
                 .WithOne(s => s.Course)
                 .HasForeignKey(s => s.CourseId);
 
@@ -138,21 +181,9 @@ namespace UCMS.Data
                 .HasForeignKey(l => l.SemesterId);
 
             modelBuilder.Entity<Semester>()
-                .HasMany(sm => sm.Students)
+                .HasMany(sm => sm.StudentRegistration)
                 .WithOne(s => s.Semester)
                 .HasForeignKey(s => s.SemesterId);
-
-            modelBuilder.Entity<Student>()
-       .HasOne(s => s.Course)
-       .WithMany(c => c.Students)
-       .HasForeignKey(s => s.CourseId)
-       .OnDelete(DeleteBehavior.Cascade); // Set cascade delete for CourseId
-
-            modelBuilder.Entity<Student>()
-                .HasOne(s => s.Semester)
-                .WithMany(sm => sm.Students)
-                .HasForeignKey(s => s.SemesterId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             base.OnModelCreating(modelBuilder);
         }

@@ -12,7 +12,7 @@ using UCMS.Data;
 namespace UCMS.Migrations
 {
     [DbContext(typeof(UCMSDbContext))]
-    [Migration("20231027060639_initial")]
+    [Migration("20231030131940_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -31,12 +31,19 @@ namespace UCMS.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Batch")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("CourseDurationInYears")
                         .HasColumnType("int");
 
                     b.Property<string>("CourseName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
 
                     b.HasKey("CourseId");
 
@@ -66,10 +73,10 @@ namespace UCMS.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("SubjectId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int?>("StudentsEnrolled")
+                        .HasColumnType("int");
 
-                    b.Property<Guid?>("UserId")
+                    b.Property<Guid>("SubjectId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("VenueId")
@@ -82,8 +89,6 @@ namespace UCMS.Migrations
                     b.HasIndex("SemesterId");
 
                     b.HasIndex("SubjectId");
-
-                    b.HasIndex("UserId");
 
                     b.HasIndex("VenueId");
 
@@ -158,20 +163,42 @@ namespace UCMS.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Batch")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("CourseId")
-                        .IsRequired()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("SemesterId")
-                        .IsRequired()
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("StudentName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("Students");
+                });
+
+            modelBuilder.Entity("UCMS.Models.Domain.StudentLectureEnrollment", b =>
+                {
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(0);
+
+                    b.Property<Guid>("LectureId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(1);
+
+                    b.HasKey("StudentId", "LectureId");
+
+                    b.HasIndex("LectureId");
+
+                    b.ToTable("StudentLectureEnrollments");
+                });
+
+            modelBuilder.Entity("UCMS.Models.Domain.StudentRegistration", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SemesterId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("UserId");
 
@@ -179,7 +206,7 @@ namespace UCMS.Migrations
 
                     b.HasIndex("SemesterId");
 
-                    b.ToTable("Students");
+                    b.ToTable("StudentRegistrations");
                 });
 
             modelBuilder.Entity("UCMS.Models.Domain.Subject", b =>
@@ -206,32 +233,17 @@ namespace UCMS.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("ProfessorUserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("SemesterId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("StudentUserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("SubjectId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("SubjectAssignId");
-
-                    b.HasIndex("ProfessorUserId");
 
                     b.HasIndex("SemesterId");
 
-                    b.HasIndex("StudentUserId");
-
                     b.HasIndex("SubjectId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("SubjectAssigns");
                 });
@@ -282,6 +294,33 @@ namespace UCMS.Migrations
                     b.ToTable("Venues");
                 });
 
+            modelBuilder.Entity("UCMS.Models.Domain.VenueBooking", b =>
+                {
+                    b.Property<Guid>("BookingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("BookingEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("BookingStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ProfessorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("VenueId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("BookingId");
+
+                    b.HasIndex("ProfessorId");
+
+                    b.HasIndex("VenueId");
+
+                    b.ToTable("VenueBookings");
+                });
+
             modelBuilder.Entity("UCMS.Models.Domain.Lecture", b =>
                 {
                     b.HasOne("UCMS.Models.Domain.Professor", "Professor")
@@ -301,10 +340,6 @@ namespace UCMS.Migrations
                         .HasForeignKey("SubjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("UCMS.Models.Domain.User", null)
-                        .WithMany("Lectures")
-                        .HasForeignKey("UserId");
 
                     b.HasOne("UCMS.Models.Domain.Venue", "Venue")
                         .WithMany("Lectures")
@@ -372,22 +407,52 @@ namespace UCMS.Migrations
 
             modelBuilder.Entity("UCMS.Models.Domain.Student", b =>
                 {
-                    b.HasOne("UCMS.Models.Domain.Course", "Course")
-                        .WithMany("Students")
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("UCMS.Models.Domain.Semester", "Semester")
-                        .WithMany("Students")
-                        .HasForeignKey("SemesterId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("UCMS.Models.Domain.User", "User")
                         .WithOne("Student")
                         .HasForeignKey("UCMS.Models.Domain.Student", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("UCMS.Models.Domain.StudentLectureEnrollment", b =>
+                {
+                    b.HasOne("UCMS.Models.Domain.Lecture", "Lecture")
+                        .WithMany("StudentEnrollments")
+                        .HasForeignKey("LectureId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("UCMS.Models.Domain.Student", "Student")
+                        .WithMany("LectureEnrollments")
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Lecture");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("UCMS.Models.Domain.StudentRegistration", b =>
+                {
+                    b.HasOne("UCMS.Models.Domain.Course", "Course")
+                        .WithMany("StudentRegistration")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("UCMS.Models.Domain.Semester", "Semester")
+                        .WithMany("StudentRegistration")
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("UCMS.Models.Domain.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Course");
@@ -399,19 +464,11 @@ namespace UCMS.Migrations
 
             modelBuilder.Entity("UCMS.Models.Domain.SubjectAssign", b =>
                 {
-                    b.HasOne("UCMS.Models.Domain.Professor", null)
-                        .WithMany("SubjectAssigns")
-                        .HasForeignKey("ProfessorUserId");
-
                     b.HasOne("UCMS.Models.Domain.Semester", "Semester")
                         .WithMany("SubjectAssigns")
                         .HasForeignKey("SemesterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("UCMS.Models.Domain.Student", null)
-                        .WithMany("SubjectAssigns")
-                        .HasForeignKey("StudentUserId");
 
                     b.HasOne("UCMS.Models.Domain.Subject", "Subject")
                         .WithMany("SubjectAssigns")
@@ -419,20 +476,40 @@ namespace UCMS.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("UCMS.Models.Domain.User", null)
-                        .WithMany("SubjectAssigns")
-                        .HasForeignKey("UserId");
-
                     b.Navigation("Semester");
 
                     b.Navigation("Subject");
+                });
+
+            modelBuilder.Entity("UCMS.Models.Domain.VenueBooking", b =>
+                {
+                    b.HasOne("UCMS.Models.Domain.Professor", "Professor")
+                        .WithMany("VenueBookings")
+                        .HasForeignKey("ProfessorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("UCMS.Models.Domain.Venue", "Venue")
+                        .WithMany("VenuesBooking")
+                        .HasForeignKey("VenueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Professor");
+
+                    b.Navigation("Venue");
                 });
 
             modelBuilder.Entity("UCMS.Models.Domain.Course", b =>
                 {
                     b.Navigation("Semesters");
 
-                    b.Navigation("Students");
+                    b.Navigation("StudentRegistration");
+                });
+
+            modelBuilder.Entity("UCMS.Models.Domain.Lecture", b =>
+                {
+                    b.Navigation("StudentEnrollments");
                 });
 
             modelBuilder.Entity("UCMS.Models.Domain.Professor", b =>
@@ -441,7 +518,7 @@ namespace UCMS.Migrations
 
                     b.Navigation("ProfessorAssigns");
 
-                    b.Navigation("SubjectAssigns");
+                    b.Navigation("VenueBookings");
                 });
 
             modelBuilder.Entity("UCMS.Models.Domain.Semester", b =>
@@ -450,14 +527,14 @@ namespace UCMS.Migrations
 
                     b.Navigation("ProfessorAssigns");
 
-                    b.Navigation("Students");
+                    b.Navigation("StudentRegistration");
 
                     b.Navigation("SubjectAssigns");
                 });
 
             modelBuilder.Entity("UCMS.Models.Domain.Student", b =>
                 {
-                    b.Navigation("SubjectAssigns");
+                    b.Navigation("LectureEnrollments");
                 });
 
             modelBuilder.Entity("UCMS.Models.Domain.Subject", b =>
@@ -471,20 +548,18 @@ namespace UCMS.Migrations
 
             modelBuilder.Entity("UCMS.Models.Domain.User", b =>
                 {
-                    b.Navigation("Lectures");
-
                     b.Navigation("Professor")
                         .IsRequired();
 
                     b.Navigation("Student")
                         .IsRequired();
-
-                    b.Navigation("SubjectAssigns");
                 });
 
             modelBuilder.Entity("UCMS.Models.Domain.Venue", b =>
                 {
                     b.Navigation("Lectures");
+
+                    b.Navigation("VenuesBooking");
                 });
 #pragma warning restore 612, 618
         }
