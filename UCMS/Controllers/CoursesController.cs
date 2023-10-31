@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using UCMS.Models;
 using UCMS.Models.Domain;
+using Microsoft.AspNetCore.Authorization;
 
 namespace UCMS.Controllers
 {
@@ -26,6 +28,8 @@ namespace UCMS.Controllers
         }
 
         // GET: Courses
+
+        [Authorize(Roles = "admin")]
         public IActionResult Index()
         {
             List<Course> courses = new List<Course>();
@@ -54,6 +58,7 @@ namespace UCMS.Controllers
         }
 
         // GET: Courses/Details/5
+        [Authorize(Roles = "admin")]
         public IActionResult Details(Guid? id)
         {
             if (id == null)
@@ -82,6 +87,7 @@ namespace UCMS.Controllers
         }
 
         // GET: Courses/Create
+        [Authorize(Roles = "admin")]
         public IActionResult Create()
         {
             return View();
@@ -90,6 +96,7 @@ namespace UCMS.Controllers
         // POST: Courses/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "admin")]
         public IActionResult Create(Course course)
         {
             
@@ -116,6 +123,7 @@ namespace UCMS.Controllers
         }
 
         // GET: Courses/Edit/5
+        [Authorize(Roles = "admin")]
         public IActionResult Edit(Guid? id)
         {
             if (id == null)
@@ -134,6 +142,7 @@ namespace UCMS.Controllers
         // POST: Courses/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "admin")]
         public IActionResult Edit(Guid id, Course course)
         {
             if (id != course.CourseId)
@@ -148,6 +157,7 @@ namespace UCMS.Controllers
         }
 
         // GET: Courses/Delete/5
+        [Authorize(Roles = "admin")]
         public IActionResult Delete(Guid? id)
         {
             if (id == null)
@@ -167,6 +177,7 @@ namespace UCMS.Controllers
         // POST: Courses/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "admin")]
         public IActionResult DeleteConfirmed(Guid id)
         {
             if (DeleteCourse(id))
@@ -178,8 +189,9 @@ namespace UCMS.Controllers
                 return Problem("Entity set 'UCMSDbContext.Courses' is null.");
             }
         }
-
         [HttpPost]
+        [Authorize(Roles = "admin")]
+
         public IActionResult AddSemester([FromForm] Guid courseId, [FromForm] string semesterName)
         {
             
@@ -204,6 +216,8 @@ namespace UCMS.Controllers
 
         // Action for deleting a semester
         [HttpPost]
+        [Authorize(Roles = "admin")]
+
         public IActionResult DeleteSemester(Guid courseId, Guid semesterId)
         {
             using (var connection = new SqlConnection(_configuration.GetConnectionString("UCMSConnectionString")))
@@ -222,6 +236,7 @@ namespace UCMS.Controllers
         }
 
 
+        [Authorize(Roles = "admin")]
 
         public IActionResult GetAssignedSubjects(Guid semesterId)
         {
@@ -279,6 +294,7 @@ namespace UCMS.Controllers
 
 
 
+        [Authorize(Roles = "admin")]
 
         public IActionResult AssignProfessors(Guid subjectId, Guid semesterId)
         {
@@ -303,7 +319,9 @@ namespace UCMS.Controllers
 
 
         [HttpPost]
-public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  List<Guid> SelectedProfessorIds)
+        [Authorize(Roles = "admin")]
+
+        public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  List<Guid> SelectedProfessorIds)
 {
     if (SelectedProfessorIds != null && SelectedProfessorIds.Any())
     {
@@ -351,6 +369,7 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
     return RedirectToAction("AssignProfessors", new { SubjectId, SemesterId });
 }
 
+        [Authorize(Roles = "admin")]
 
         public List<Professor> GetAssignedProfessorsForSubject(Guid SubjectId, Guid SemesterId)
         {
@@ -395,7 +414,8 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
 
 
         [HttpPost]
-       public IActionResult AddSubjectToSemester(Guid semesterId, List<Guid> selectedSubjectIds)
+        [Authorize(Roles = "admin")]
+        public IActionResult AddSubjectToSemester(Guid semesterId, List<Guid> selectedSubjectIds)
 {
     if (selectedSubjectIds != null && selectedSubjectIds.Any())
     {
@@ -440,7 +460,6 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
 }
 
 
-
         private Course GetCourseById(Guid id)
         {
             using (SqlConnection connection = new SqlConnection(GetConnectionString()))
@@ -470,6 +489,8 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
             }
             return null;
         }
+
+
 
         private List<Semester> GetSemestersByCourseId(Guid courseId)
         {
@@ -526,6 +547,7 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
             return subjects;
         }
 
+
         private List<Professor> GetProfessors()
         {
             List<Professor> professors = new List<Professor>();
@@ -552,6 +574,7 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
             return professors;
         }
 
+
         private void InsertCourse(Course course)
         {
             using (SqlConnection connection = new SqlConnection(GetConnectionString()))
@@ -571,7 +594,6 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
                 }
             }   
         }
-
         private void UpdateCourse(Course course)
         {
             using (SqlConnection connection = new SqlConnection(GetConnectionString()))
@@ -590,7 +612,6 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
                 }
             }
         }
-
         private void InsertSemester(Semester semester)
         {
             using (SqlConnection connection = new SqlConnection(GetConnectionString()))
@@ -607,7 +628,6 @@ public IActionResult AddProfessorToSubjects(Guid SubjectId, Guid SemesterId,  Li
                 }
             }
         }
-
         private bool DeleteCourse(Guid id)
         {
             using (SqlConnection connection = new SqlConnection(GetConnectionString()))

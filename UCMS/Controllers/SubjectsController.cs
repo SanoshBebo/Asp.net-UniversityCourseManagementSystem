@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using UCMS.Models.Domain;
@@ -25,6 +26,7 @@ namespace UCMS.Controllers
         }
 
         // GET: Subjects
+        [Authorize(Roles = "admin")]
         public IActionResult Index()
         {
             List<Subject> subjects = new List<Subject>();
@@ -53,6 +55,7 @@ namespace UCMS.Controllers
         }
 
         // GET: Subjects/Details/5
+        [Authorize(Roles = "admin")]
         public IActionResult Details(Guid? id)
         {
             if (id == null)
@@ -70,6 +73,7 @@ namespace UCMS.Controllers
         }
 
         // GET: Subjects/Create
+        [Authorize(Roles = "admin")]
         public IActionResult Create()
         {
             return View();
@@ -78,6 +82,7 @@ namespace UCMS.Controllers
         // POST: Subjects/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "admin")]
         public IActionResult Create(Subject subject)
         {
             
@@ -88,6 +93,7 @@ namespace UCMS.Controllers
         }
 
         // GET: Subjects/Edit/5
+        [Authorize(Roles = "admin")]
         public IActionResult Edit(Guid? id)
         {
             if (id == null)
@@ -106,6 +112,7 @@ namespace UCMS.Controllers
         // POST: Subjects/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "admin")]
         public IActionResult Edit(Guid id, Subject subject)
         {
             if (id != subject.SubjectId)
@@ -120,6 +127,7 @@ namespace UCMS.Controllers
         }
 
         // GET: Subjects/Delete/5
+        [Authorize(Roles = "admin")]
         public IActionResult Delete(Guid? id)
         {
             if (id == null)
@@ -139,6 +147,8 @@ namespace UCMS.Controllers
         // POST: Subjects/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "admin")]
+
         public IActionResult DeleteConfirmed(Guid id)
         {
             DeleteSubject(id);

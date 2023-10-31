@@ -1,15 +1,17 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using UCMS.Models.Domain;
 
 namespace UCMS.Data
 {
-    public class UCMSDbContext : DbContext { 
-        public UCMSDbContext(DbContextOptions options) : base(options)
+    public class UCMSDbContext : IdentityDbContext<IdentityUser>
+    {
+        public UCMSDbContext(DbContextOptions<UCMSDbContext> options) : base(options)
         {
         }
 
-        public DbSet<User> Users { get; set; }
+        public DbSet<User> MyUsers { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Lecture> Lectures { get; set; }
         public DbSet<Professor> Professors { get; set; }

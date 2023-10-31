@@ -15,5 +15,6 @@ namespace UCMS.Models.Domain
         // Navigation properties
         public Professor Professor { get; set; }
         public Student Student { get; set; }
+
     }
 }

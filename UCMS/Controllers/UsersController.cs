@@ -1,5 +1,6 @@
 ﻿// UserController.cs
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +13,14 @@ public class UsersController : Controller
 {
     private readonly UCMSDbContext _dbContext;
     private readonly IConfiguration _configuration;
-
-    public UsersController(UCMSDbContext dbContext, IConfiguration configuration)
+    private readonly UserManager<IdentityUser> _userManager; // Inject UserManager
+    private readonly SignInManager<IdentityUser> _signInManager;
+    public UsersController(UCMSDbContext dbContext, IConfiguration configuration, UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
     {
         _dbContext = dbContext;
         _configuration = configuration;
+        _userManager = userManager; // Initialize UserManager
+        _signInManager = signInManager;
     }
 
     public IActionResult Register()
@@ -65,22 +69,44 @@ public class UsersController : Controller
             }
 
             // Add the user to the database
-            _dbContext.Users.Add(user);
+            _dbContext.MyUsers.Add(user);
 
             // Save changes to the database
             _dbContext.SaveChanges();
 
-            if (model.Role == "professor")
+            var identityUser = new IdentityUser
             {
-                await userManager.AddToRoleAsync(user, "Professor");
+                Id = userId.ToString(),
+                UserName = model.Email,
+                Email = model.Email,
+                EmailConfirmed = true,
+            };
+
+            var result = await _userManager.CreateAsync(identityUser, model.Password);
+
+            if (result.Succeeded)
+            {
+                // Add the user to the appropriate role
+                if (model.Role == "professor")
+                {
+                    await _userManager.AddToRoleAsync(identityUser, "professor");
+                }
+                else if (model.Role == "student")
+                {
+                    await _userManager.AddToRoleAsync(identityUser, "student");
+                }
+                else if (model.Role == "admin")
+                {
+                    await _userManager.AddToRoleAsync(identityUser, "admin");
+                }
+
+                // Redirect to a success page or login page
+                return RedirectToAction("Login");
             }
-            else if (model.Role == "student")
+            else
             {
-                await userManager.AddToRoleAsync(user, "Student");
-            }
-            else if (model.Role == "admin")
-            {
-                await userManager.AddToRoleAsync(user, "Admin");
+                // Handle user creation errors
+                ModelState.AddModelError(string.Empty, "User creation failed.");
             }
 
             // Redirect to a success page or login page
@@ -93,38 +119,64 @@ public class UsersController : Controller
 
     public IActionResult Login()
     {
+        
         return View();
+    }
+
+
+    public async Task<IActionResult> Logout()
+    {
+        await _signInManager.SignOutAsync();
+        return View("Login");
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Login(LoginViewModel model)
+    public async Task<IActionResult> Login(LoginViewModel model)
     {
         if (ModelState.IsValid)
         {
-            var user = _dbContext.Users.FirstOrDefault(u => u.Email == model.Email);
+            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
 
-            if (user != null && BCrypt.Net.BCrypt.Verify(model.Password, user.Password))
+            var user = _dbContext.MyUsers.FirstOrDefault(u => u.Email == model.Email);
+
+            if (result.Succeeded)
             {
+                // Redirect to the appropriate home page based on the user's role
                 if (user.Role == "professor")
                 {
-                    return RedirectToAction("ProfessorHome", user);
+                    return RedirectToAction("ProfessorHome");
                 }
                 else if (user.Role == "student")
                 {
-                    return RedirectToAction("StudentHome",user);
+                    return RedirectToAction("StudentHome");
                 }
                 else if (user.Role == "admin")
                 {
                     return RedirectToAction("AdminHome");
                 }
             }
-             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+            else if (result.IsLockedOut)
+            {
+                ModelState.AddModelError(string.Empty, "Account is locked out. Please contact support.");
+            }
+            else if (result.IsNotAllowed)
+            {
+                ModelState.AddModelError(string.Empty, "Login is not allowed. Please contact support.");
+            }
+            else
+            {
+                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+            }
         }
 
         return View(model);
     }
 
+
+
+
+    [Authorize(Roles = "professor")]
     public IActionResult ProfessorHome(Guid userId)
     {
         // Retrieve the professor based on the user's ID
@@ -149,6 +201,8 @@ public class UsersController : Controller
         return View(); // You can display an error message or redirect to an error page.
     }
 
+
+    [Authorize(Roles = "professor")]
     private List<AssignedSubjectWithSemesterViewModel> GetAssignedSubjectsForProfessor(Guid professorId)
     {
         var assignedSubjects = _dbContext.ProfessorAssigns
@@ -186,7 +240,7 @@ public class UsersController : Controller
         return assignedSubjects;
     }
 
-
+    [Authorize(Roles = "professor")]
     public IActionResult AssignLecture(Guid subjectId, Guid semesterId, Guid professorId)
     {
         var viewModel = new LectureAssignmentViewModel
@@ -209,6 +263,8 @@ public class UsersController : Controller
         return View(viewModel);
     }
 
+
+    [Authorize(Roles = "professor")]
     public IActionResult ViewLecture(Guid subjectId, Guid semesterId, Guid professorId)
     {
         var viewModel = new LectureAssignmentViewModel
@@ -233,6 +289,7 @@ public class UsersController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = "professor")]
     public IActionResult DeleteLecture(Guid lectureId, Guid professorId)
     {
         // Find the lecture to delete
@@ -259,6 +316,7 @@ public class UsersController : Controller
 
 
     [HttpPost]
+    [Authorize(Roles = "professor")]
     public IActionResult AddLecture(LectureAssignmentViewModel viewModel)
     {
         // Retrieve the subject and semester to calculate remaining teaching hours
@@ -433,6 +491,8 @@ public class UsersController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = "student")]
+
     public IActionResult RegisterCourse(Guid courseId, Guid userId)
     {
         try
@@ -500,6 +560,8 @@ public class UsersController : Controller
             return Content("An error occurred: " + ex.Message); // You should create an Error.cshtml view
         }
     }
+
+    [Authorize(Roles = "student")]
     public IActionResult StudentHome(Guid userId)
     {
         try
@@ -559,7 +621,7 @@ public class UsersController : Controller
     }
 
 
-
+    [Authorize(Roles = "student")]
     public IActionResult ViewLectures(Guid userId,Guid subjectId, Guid semesterId)
     {
         var lectures = _dbContext.Lectures
@@ -591,6 +653,7 @@ public class UsersController : Controller
             .Any(enrollment => enrollment.StudentId == studentId && enrollment.LectureId == lectureId);
     }
 
+    [Authorize(Roles = "student")]
     public IActionResult BookLecture(Guid lectureId, Guid userId)
     {
         var lecture = _dbContext.Lectures.FirstOrDefault(l => l.LectureId == lectureId);
@@ -676,7 +739,7 @@ public class UsersController : Controller
 
 
 
-
+    [Authorize(Roles = "admin")]
     public IActionResult AdminHome()
     {
         return View();
